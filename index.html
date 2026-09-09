@@ -126,7 +126,7 @@ function down(e){
  const p=clientPt(e),handle=e.target.dataset.handle;
  if(handle&&selected.length===1){checkpoint();const o=page().objects.find(x=>x.id===selected[0]);gesture={kind:handle,o,start:p,orig:clone(o)};capturePointer(e);return}
  const node=e.target.closest('.obj');
- if(runMode){if(node){const o=page().objects.find(o=>o.id===node.dataset.id);if(o?.action)runAction(o);else if(presentationMode)playFrames()}else if(presentationMode)playFrames();return}
+ if(runMode){if(node){const o=page().objects.find(o=>o.id===node.dataset.id);if(o?.action)runAction(o);else playFrames()}else playFrames();return}
  if(tool==='select'){
   if(node){const id=node.dataset.id,o=page().objects.find(x=>x.id===id),l=page().layers.find(x=>x.id===o.layerId);if(l?.locked)return;if(e.shiftKey){selected=selected.includes(id)?selected.filter(x=>x!==id):[...selected,id]}else if(!selected.includes(id))selected=[id];checkpoint();gesture={kind:'move',start:p,items:selected.map(id=>{const z=page().objects.find(x=>x.id===id);return{o:z,x:z.x,y:z.y}})};capturePointer(e)}else selected=[];
   renderCanvas();renderProps();return;
