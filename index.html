@@ -50,7 +50,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.tool-r
 </head>
 <body>
 <div class="top">
-  <div class="tool-row create-row"><span class="brand">✦ 白板モーション v4.2</span><button data-tool="select" class="active quick-select">↖ 選択</button><details class="tool-group create-group"><summary>✚ 作成</summary><div class="tool-group-menu"><button data-tool="pen">✎ 手書き</button><button data-tool="rect">□ 四角</button><button data-tool="ellipse">○ 円</button><button data-tool="line">／ 線</button><button data-tool="arrow">➜ 矢印</button><button data-tool="text">T 文字</button><button id="addImage">▧ 写真</button></div></details><details class="tool-group edit-group"><summary>✎ 編集</summary><div class="tool-group-menu"><button id="copyBtn">⧉ コピー</button><button id="pasteBtn">▣ 貼付</button><button id="deleteBtn" disabled>⌫ 削除</button><button id="groupBtn">部品化</button></div></details></div>
+  <div class="tool-row create-row"><span class="brand">✦ 白板モーション v4.2</span><button data-tool="select" class="active quick-select">↖ 選択</button><details class="tool-group create-group"><summary>✚ 作成</summary><div class="tool-group-menu"><button data-tool="pen">✎ 手書き</button><button data-tool="rect">□ 四角</button><button data-tool="ellipse">○ 円</button><button data-tool="line">／ 線</button><button data-tool="arrow">➜ 矢印</button><button data-tool="text">T 文字</button><button id="addImage">▧ 写真</button><button id="aiImageBtn">✨ AIイラスト</button></div></details><details class="tool-group edit-group"><summary>✎ 編集</summary><div class="tool-group-menu"><button id="copyBtn">⧉ コピー</button><button id="pasteBtn">▣ 貼付</button><button id="deleteBtn" disabled>⌫ 削除</button><button id="groupBtn">部品化</button></div></details></div>
   <div class="tool-row edit-row"><details class="tool-group action-group"><summary>▶ 動作</summary><div class="tool-group-menu"><button id="linkBtn">↔ ページ移動</button><button id="runBtn">▶ 実行</button><button id="presentBtn">▣ プレゼン</button></div></details><details class="tool-group history-group"><summary>↶ 履歴</summary><div class="tool-group-menu"><button id="undoBtn" title="元に戻す">↶ 元に戻す</button><button id="redoBtn" title="やり直す">↷ やり直す</button><button id="resetBtn">操作リセット</button></div></details><details class="tool-group file-group"><summary>▣ ファイル</summary><div class="tool-group-menu"><button id="saveBtn">保存</button><button id="loadBtn">読込</button><button id="pngBtn">PNG</button><button id="exportPresentBtn">⬇ プレゼン書出</button></div></details><span id="autosaveStatus" class="autosave-status">自動保存準備中</span></div>
 </div>
 <input id="fileImage" type="file" accept="image/*"><input id="fileLoad" type="file" accept="application/json,.json">
@@ -63,6 +63,16 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.tool-r
 <div class="version-badge">最新版 v4.2</div>
 <div id="presentControls" class="present-controls"><button id="presentPrev" title="前のページ">←</button><span id="presentInfo">1 / 1</span><button id="presentNext" title="次のページ">→</button><button id="presentExit">編集画面へ</button></div>
 <div id="toast" class="toast"></div>
+<div id="aiModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle">
+  <div class="modal-card"><div class="modal-head"><h2 id="aiModalTitle">✨ AIイラストを作る</h2><button id="aiClose" class="modal-close" aria-label="閉じる">×</button></div>
+    <label style="display:grid;gap:6px;font-weight:700">描きたいイラスト<textarea id="aiPrompt" maxlength="800" placeholder="例：森の中で本を読む子ども。明るく親しみやすい教材イラスト"></textarea></label>
+    <div class="modal-options"><label>絵柄 <select id="aiStyle"><option>教材イラスト</option><option>シンプルな線画</option><option>漫画</option><option>水彩画</option><option>写実的</option></select></label><label>形 <select id="aiRatio"><option value="1:1">正方形</option><option value="4:3">横長 4:3</option><option value="16:9">横長 16:9</option><option value="3:4">縦長 3:4</option></select></label></div>
+    <div class="hint" style="padding:12px 0;line-height:1.7">① 指示文をコピー　② 下から画像生成サービスを選ぶ　③ 画像をダウンロード　④ 白板の「写真」から読み込んでください。</div>
+    <div id="aiMessage" class="hint" style="min-height:30px"></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 14px"><button id="aiOpenGemini">◆ Gemini ↗</button><button id="aiOpenDesigner">▦ Microsoft Designer ↗</button><button id="aiOpenFirefly">✦ Adobe Firefly ↗</button><button id="aiOpenCanva">C Canva ↗</button></div>
+    <div class="modal-actions"><button id="aiCancel">閉じる</button><button id="aiGenerate" class="primary">指示文をコピー</button></div>
+  </div>
+</div>
 <div id="textModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="textModalTitle">
   <div class="modal-card"><div class="modal-head"><h2 id="textModalTitle">文字を入力</h2><button id="textClose" class="modal-close" aria-label="文字編集を閉じる">×</button></div>
     <textarea id="textInput" placeholder="ここに文字を入力してください"></textarea>
@@ -85,8 +95,10 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.tool-r
 </div>
 <script>
 (()=>{'use strict';
-document.querySelector('.top .brand').textContent='✦ 白板モーション v4.3';
-document.querySelector('.version-badge').textContent='最新版 v4.3';
+document.querySelector('.top .brand').textContent='✦ 白板モーション v4.6';
+document.querySelector('.version-badge').textContent='最新版 v4.6';
+document.querySelector('#aiImageBtn').textContent='✨ AI画像ガイド';
+localStorage.removeItem('wmsAiEndpoint');localStorage.removeItem('wmsAiAccessCode');
 const $=s=>document.querySelector(s), clone=o=>JSON.parse(JSON.stringify(o)), uid=()=>Math.random().toString(36).slice(2,10), NS='http://www.w3.org/2000/svg';
 const stage=$('#stage'), content=$('#content'), selectionLayer=$('#selectionLayer');
 let project={version:1,title:'新しい教材',pages:[]}, pageIndex=0, tool='select', selected=[], activeLayer='', gesture=null, activePointerId=null, undo=[], redo=[], runMode=false, playing=false, presentationMode=false, activeFrame=-1, textEdit=null, navEditId=null, objectClipboard=null, autosaveTimer=null, autosaveDB=null;
@@ -174,6 +186,17 @@ $('#navApply').onclick=()=>{const targetId=$('#navTarget').value,o=page().object
 function setTool(name){tool=name;runMode=false;gesture=null;releasePointer();document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x.dataset.tool===name));const b=document.querySelector(`[data-tool="${name}"]`);$('#status').textContent=(b?.textContent.trim()||'選択')+'モード';renderAll()}
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('#addImage').onclick=()=>$('#fileImage').click();$('#fileImage').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader;r.onload=()=>{const im=new Image;im.onload=()=>addObject({type:'image',x:120,y:90,w:Math.min(420,im.width),h:Math.min(300,im.height),src:r.result,stroke:'#000',fill:'transparent',sw:0});im.src=r.result};r.readAsDataURL(f);e.target.value=''};
+function closeAiModal(){$('#aiModal').classList.remove('show');$('#aiMessage').textContent=''}
+function placeAiImage(src,ratio){const sizes={'1:1':[360,360],'4:3':[420,315],'16:9':[480,270],'3:4':[315,420]},[w,h]=sizes[ratio]||sizes['1:1'];addObject({type:'image',x:(960-w)/2,y:(600-h)/2,w,h,src,stroke:'#000',fill:'transparent',sw:0});setTool('select')}
+$('#aiImageBtn').onclick=()=>{$('#aiModal').classList.add('show');setTimeout(()=>$('#aiPrompt').focus(),30)};
+$('#aiClose').onclick=closeAiModal;$('#aiCancel').onclick=closeAiModal;$('#aiModal').addEventListener('pointerdown',e=>{if(e.target===$('#aiModal'))closeAiModal()});
+function aiGuidePrompt(){const prompt=$('#aiPrompt').value.trim(),style=$('#aiStyle').value,ratio=$('#aiRatio').value;if(!prompt)return'';return `${prompt}\n\n${style}の絵柄で、${ratio}の比率にしてください。教育用ホワイトボードで使いやすい、見やすく親しみやすい一枚絵にしてください。画像内に文字、ロゴ、透かし、署名は入れないでください。`}
+$('#aiGenerate').onclick=async()=>{const text=aiGuidePrompt(),msg=$('#aiMessage');if(!text)return msg.textContent='描きたい内容を入力してください。';try{await navigator.clipboard.writeText(text);msg.textContent='指示文をコピーしました。下から利用するサービスを選んでください。'}catch{const area=$('#aiPrompt');area.focus();area.select();msg.textContent='この文章をコピーし、利用するサービスへ貼り付けてください。'}};
+function openAiService(url){if(!aiGuidePrompt())return $('#aiMessage').textContent='先に描きたい内容を入力してください。';window.open(url,'_blank','noopener,noreferrer')}
+$('#aiOpenGemini').onclick=()=>openAiService('https://gemini.google.com/');
+$('#aiOpenDesigner').onclick=()=>openAiService('https://designer.microsoft.com/image-creator');
+$('#aiOpenFirefly').onclick=()=>openAiService('https://firefly.adobe.com/generate/images');
+$('#aiOpenCanva').onclick=()=>openAiService('https://www.canva.com/ai-image-generator/');
 $('#addPage').onclick=()=>{checkpoint();project.pages.push(makePage('ページ'+(project.pages.length+1)));switchPage(project.pages.length-1)};$('#addLayer').onclick=()=>{checkpoint();const l={id:uid(),name:'レイヤー'+(page().layers.length+1),visible:true,locked:false};page().layers.push(l);activeLayer=l.id;renderAll()};
 function reorder(o,dir){checkpoint();const a=page().objects,i=a.indexOf(o);a.splice(i,1);dir>0?a.push(o):a.unshift(o);syncFrame();renderAll()}
 function duplicateObj(o){checkpoint();const n=clone(o);n.id=uid();n.x+=20;n.y+=20;n.name+=' コピー';page().objects.push(n);addObjectToFrames(n);selected=[n.id];syncFrame();renderAll()}
